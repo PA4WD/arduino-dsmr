@@ -70,7 +70,7 @@ class P1Reader {
      * rate configured).
      */
     P1Reader(Stream *stream, uint8_t req_pin)
-      : stream(stream), req_pin(req_pin), once(false), state(State::DISABLED_STATE) {
+      : stream(stream), req_pin(req_pin), once(false), use_crc(true), state(State::DISABLED_STATE) {
       pinMode(req_pin, OUTPUT);
       digitalWrite(req_pin, LOW);
     }
@@ -112,6 +112,14 @@ class P1Reader {
     }
 
     /**
+     * Enable the crc check,
+     * DSMR 2.2 has no crc value
+     */
+    void enable_crc(bool use) {
+      this->use_crc = use;
+    }
+
+    /**
      * Check for new data to read. Should be called regularly, such as
      * once every loop. Returns true if a complete message is available
      * (just like available).
@@ -119,6 +127,16 @@ class P1Reader {
     bool loop() {
       while(true) {
         if (state == State::CHECKSUM_STATE) {
+          if (this->use_crc == false) {
+            // Prepare for next message
+            state = State::WAITING_STATE;
+            // Message complete
+            this->_available = true;
+            if (once)
+             this->disable();
+            return true;
+          }
+
           // Let the Stream buffer the CRC bytes. Convert to size_t to
           // prevent unsigned vs signed comparison
           if ((size_t)this->stream->available() < CrcParser::CRC_LEN)
@@ -234,6 +252,7 @@ class P1Reader {
     bool once;
     State state;
     String buffer;
+    bool use_crc;
     uint16_t crc;
 };
 
