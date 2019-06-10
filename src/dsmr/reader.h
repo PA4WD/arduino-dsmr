@@ -118,6 +118,13 @@ class P1Reader {
     void enable_crc(bool use) {
       this->use_crc = use;
     }
+    /**
+     * ignore empty obis ids,
+     * old kamstrup /kmp5 gives empty mesages
+     */
+    void ignore_empty_obis(bool ignore) {
+      this->ignore_empty = ignore;
+    }
 
     /**
      * Check for new data to read. Should be called regularly, such as
@@ -253,6 +260,7 @@ class P1Reader {
     State state;
     String buffer;
     bool use_crc;
+    bool ignore_empty;
     uint16_t crc;
 };
 
